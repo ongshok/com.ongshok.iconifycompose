@@ -26,7 +26,11 @@ fun App() {
                 modifier = Modifier.size(64.dp),
                 tint = Color.Magenta
             )
-
+            IconifyIcon(
+                icon = "lucide:home",
+                modifier = Modifier.size(64.dp),
+                tint = Color.Magenta
+            )
             IconifyIcon(
                 icon = "mdi:fire",
                 modifier = Modifier.size(64.dp),

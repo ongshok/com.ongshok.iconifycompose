@@ -6,8 +6,14 @@ import kotlinx.serialization.Serializable
 data class IconifyResponse(
     val prefix: String,
     val icons: Map<String, IconData>,
+    val aliases: Map<String, IconifyAlias>? = null,
     val width: Int? = null,
     val height: Int? = null
+)
+
+@Serializable
+data class IconifyAlias(
+    val parent: String
 )
 
 @Serializable

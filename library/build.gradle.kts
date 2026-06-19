@@ -94,7 +94,7 @@ android {
 
 // --- Maven Central Publishing Configuration ---
 mavenPublishing {
-    coordinates("com.ongshok", "iconify", "1.0.3")
+    coordinates("com.ongshok", "iconify", "1.0.4")
 
     pom {
         name.set("Iconify Compose")

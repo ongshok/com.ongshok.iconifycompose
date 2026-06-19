@@ -31,7 +31,7 @@ Add the dependency to your shared module's `commonMain` dependencies in `build.g
 sourceSets {
     val commonMain by getting {
         dependencies {
-            implementation("com.ongshok:iconify:1.0.3")
+            implementation("com.ongshok:iconify:1.0.4")
         }
     }
 }
