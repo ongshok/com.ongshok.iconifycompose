@@ -55,8 +55,9 @@ class MyApp : Application() {
         // Inject your custom primary and fallback server endpoints
         Iconify.initialize(
             customUrls = listOf(
-                "[https://iconify.mycompany.internal](https://iconify.mycompany.internal)",
-                "[https://backup-iconify.mycompany.internal](https://backup-iconify.mycompany.internal)"
+                "https://iconify.mycompany.internal",
+                "https://backup-iconify.mycompany.internal",
+                "https://api.iconify.design"
             )
         )
     }
