@@ -10,6 +10,7 @@ import androidx.compose.runtime.produceState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.ongshok.iconify.Iconify
 import com.ongshok.iconify.cache.IconCache
 import com.ongshok.iconify.data.IconifyClient
 import com.ongshok.iconify.parser.SvgPathParser
@@ -36,7 +37,7 @@ fun IconifyIcon(
             // Double-check inside the background thread to prevent duplicate network calls
             IconCache.get(icon)?.let { return@withContext it }
 
-            val iconData = IconifyClient.fetchIcon(icon)
+            val iconData = Iconify.sharedClient.fetchIcon(icon)
             Log.d("IconifyIcon", "iconData: $iconData")
             if (iconData != null) {
                 val parsedVector = SvgPathParser.createVector(iconData, name = icon)

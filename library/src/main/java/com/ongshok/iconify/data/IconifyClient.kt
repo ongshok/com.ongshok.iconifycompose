@@ -2,49 +2,69 @@ package com.ongshok.iconify.data
 
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
-import io.ktor.client.engine.cio.CIO
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.get
-import io.ktor.client.request.parameter
-import io.ktor.serialization.kotlinx.json.json
-import kotlinx.serialization.json.Json
+import java.util.concurrent.ConcurrentHashMap
+import kotlin.time.Duration.Companion.minutes
 
-object IconifyClient {
-    private val client = HttpClient(CIO) {
-        install(ContentNegotiation) {
-            json(Json {
-                ignoreUnknownKeys = true
-                coerceInputValues = true
-            })
-        }
-    }
+class IconifyClient(
+    // Accept a list of servers, defaulting to your primary ones
+    private val serverUrls: List<String> = listOf("https://api.iconify.design", "https://api.simplesvg.com"),
+    private val httpClient: HttpClient = HttpClient(),
+    private val backoffDurationMs: Long = 5.minutes.inWholeMilliseconds // Cooldown period
+) {
+    // Thread-safe map to store the timestamp (epoch ms) when a server failed
+    private val failedServers = ConcurrentHashMap<String, Long>()
 
-    private val serverUrls: List<String> = listOf("https://api.iconify.design", "https://api.simplesvg.com")
-
-    /**
-     * Fetches specific icon details from Iconify API
-     * @param component e.g., "mdi:home" splits into prefix = "mdi", name = "home"
-     */
     suspend fun fetchIcon(component: String): IconData? {
+        val currentTime = System.currentTimeMillis()
         val parts = component.split(":")
-        if (parts.size != 2) return null
 
-        val prefix = parts[0]
-        val iconName = parts[1]
+        var prefix = parts[0]
+        var iconName = parts[1]
+        if (parts.size != 2) {
+            prefix = "lucide"
+            iconName = parts[0]
+        }
 
-        for (baseUrl in serverUrls) {
+        // 1. Filter out servers that are currently in the backoff penalty box
+        val activeServers = serverUrls.filter { url ->
+            val failureTime = failedServers[url]
+            if (failureTime == null) {
+                true // Server has no recorded failures
+            } else if (currentTime - failureTime > backoffDurationMs) {
+                failedServers.remove(url) // Backoff expired! Forgive the server
+                true
+            } else {
+                false // Server is still backing off, skip it
+            }
+        }
+
+        // 2. Fallback strategy: If ALL servers are backing off, reuse all of them as a last resort
+        val serversToTry = activeServers.ifEmpty { serverUrls }
+
+        for (baseUrl in serversToTry) {
             try {
-                val response: IconifyResponse = client.get("$baseUrl/$prefix.json") {
-                    parameter("icons", iconName)
-                }.body()
+                val response = httpClient.get("$baseUrl/$prefix.json?icons=$iconName")
+                if (response.status.value == 200) {
 
-                return response.icons[iconName]
-            } catch (e: Exception) {
-                e.printStackTrace()
+                    // Deserialize the full API wrapper envelope
+                    val apiResponse = response.body<IconifyResponse>()
+
+                    // Extract and return your exact targeted IconData object from the map
+                    return apiResponse.icons[iconName]
+                } else {
+                    markAsFailed(baseUrl, currentTime)
+                }
+            } catch (_: Exception) {
+                markAsFailed(baseUrl, currentTime)
                 // Log exception or silently fall back to the next server mirror
-//                println("Server $baseUrl failed, trying fallback mirror...")
+                println("Server $baseUrl failed. Backing off for ${backoffDurationMs / 1000}s.")
             }
         }
         return null // All servers failed
+    }
+
+    private fun markAsFailed(url: String, timestamp: Long) {
+        failedServers[url] = timestamp
     }
 }
