@@ -5,6 +5,8 @@ plugins {
 
     id("maven-publish")
     id("signing")
+    // Add the specialized central portal publisher plugin
+    id("com.vanniktech.maven.publish") version "0.36.0"
 }
 
 // Ensure sources are packaged with your library
@@ -55,63 +57,35 @@ dependencies {
 }
 
 // --- Maven Central Publishing Configuration ---
+mavenPublishing {
+    // Defines your token coordinates
+    coordinates("com.ongshok", "iconify", "1.0.0")
 
-extensions.configure<PublishingExtension> {
-    repositories {
-        maven {
-            name = "MavenCentral"
-            // The modern Sonatype Central S01 publishing portal URL
-            url = uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
-
-            credentials {
-                username = System.getenv("OSSRH_USERNAME")
-                password = System.getenv("OSSRH_PASSWORD")
+    pom {
+        name.set("Iconify Compose")
+        description.set("An asynchronous icon loading library for Jetpack Compose using Iconify API.")
+        url.set("https://github.com/username/repository")
+        licenses {
+            license {
+                name.set("The Apache License, Version 2.0")
+                url.set("http://www.apache.org/licenses/LICENSE-2.0.txt")
             }
         }
-    }
-    publications {
-        create<MavenPublication>("release") {
-            // Replace with your verified namespace details
-            groupId = "com.ongshok"
-            artifactId = "iconify"
-            version = "1.0.0"
-
-            afterEvaluate {
-                from(components["release"])
-            }
-
-            pom {
-                name.set("Iconify Compose")
-                description.set("An asynchronous icon loading library for Jetpack Compose using Iconify API.")
-                url.set("https://github.com/ongshok/com.ongshok.iconifycompose")
-                licenses {
-                    license {
-                        name.set("The Apache License, Version 2.0")
-                        url.set("http://www.apache.org/licenses/LICENSE-2.0.txt")
-                    }
-                }
-                developers {
-                    developer {
-                        id.set("dzeroone")
-                        name.set("Md. Najmul Hosain")
-                        email.set("developer.zeroone@gmail.com")
-                    }
-                }
-                scm {
-                    connection.set("scm:git:git://github.com/ongshok/com.ongshok.iconifycompose.git")
-                    developerConnection.set("scm:git:ssh://github.com/ongshok/com.ongshok.iconifycompose.git")
-                    url.set("https://github.com/ongshok/com.ongshok.iconifycompose")
-                }
+        developers {
+            developer {
+                id.set("yourusername")
+                name.set("Your Name")
             }
         }
+        scm {
+            url.set("https://github.com/username/repository")
+        }
     }
-}
 
-extensions.configure<SigningExtension> {
-    useInMemoryPgpKeys(
-        System.getenv("GPG_PRIVATE_KEY"),
-        System.getenv("GPG_PASSPHRASE")
-    )
-    val publishing = extensions.getByType<PublishingExtension>()
-    sign(publishing.publications["release"])
+    // Configures publishing specifically for the new Sonatype Central Portal
+//     publishToMavenCentral(com.vanniktech.maven.publish.SonatypeHost.CENTRAL_PORTAL)
+    publishToMavenCentral(automaticRelease = true)
+
+    // Automatically handles signing via your GPG configuration
+    signAllPublications()
 }
