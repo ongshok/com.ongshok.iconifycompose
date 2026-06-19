@@ -57,6 +57,18 @@ dependencies {
 // --- Maven Central Publishing Configuration ---
 
 extensions.configure<PublishingExtension> {
+    repositories {
+        maven {
+            name = "MavenCentral"
+            // The modern Sonatype Central S01 publishing portal URL
+            url = uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
+
+            credentials {
+                username = System.getenv("OSSRH_USERNAME")
+                password = System.getenv("OSSRH_PASSWORD")
+            }
+        }
+    }
     publications {
         create<MavenPublication>("release") {
             // Replace with your verified namespace details
