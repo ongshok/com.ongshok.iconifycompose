@@ -9,11 +9,6 @@ plugins {
     id("com.vanniktech.maven.publish") version "0.36.0"
 }
 
-// Ensure sources are packaged with your library
-java {
-    withSourcesJar()
-}
-
 android {
     namespace = "com.ongshok.iconify"
     compileSdk = 37
@@ -30,12 +25,6 @@ android {
 
     buildFeatures {
         compose = true
-    }
-
-    publishing {
-        singleVariant("release") {
-            withSourcesJar() // Automatically packages your source code
-        }
     }
 }
 
@@ -64,7 +53,7 @@ mavenPublishing {
     pom {
         name.set("Iconify Compose")
         description.set("An asynchronous icon loading library for Jetpack Compose using Iconify API.")
-        url.set("https://github.com/username/repository")
+        url.set("https://github.com/ongshok/com.ongshok.iconifycompose")
         licenses {
             license {
                 name.set("The Apache License, Version 2.0")
@@ -73,12 +62,12 @@ mavenPublishing {
         }
         developers {
             developer {
-                id.set("yourusername")
-                name.set("Your Name")
+                id.set("dzeroone")
+                name.set("Najmul Hosain")
             }
         }
         scm {
-            url.set("https://github.com/username/repository")
+            url.set("https://github.com/ongshok/com.ongshok.iconifycompose")
         }
     }
 
