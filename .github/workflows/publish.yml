@@ -21,7 +21,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: Publish & Upload to Sonatype Central
-        run: ./gradlew publishAllPublicationsToMavenCentralRepository -PmavenCentralUsername="${{ secrets.OSSRH_USERNAME }}" -PmavenCentralPassword="${{ secrets.OSSRH_PASSWORD }}"
+        run: ./gradlew publishAllPublicationsToMavenCentralRepository -PmavenCentralUsername="${{ secrets.OSSRH_USERNAME }}" -PmavenCentralPassword="${{ secrets.OSSRH_PASSWORD }}" -Psigning.keyId="492E01BBA2268888" -Psigning.password="${{ secrets.GPG_PASSPHRASE }}" -Psigning.secretKeyRingFile=""
         env:
           OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           OSSRH_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
