@@ -9,52 +9,6 @@ import androidx.compose.ui.graphics.vector.addPathNodes
 import androidx.compose.ui.unit.dp
 import com.ongshok.iconify.data.IconData
 
-//object SvgPathParser {
-//
-//    /**
-//     * Converts raw Iconify IconData into an Android Jetpack Compose ImageVector
-//     */
-//    fun createVector(iconData: IconData, name: String): ImageVector? {
-//        val pathStrings = extractAllPathData(iconData.body)
-//
-//        // Default Iconify viewports are typically 24x24 unless specified
-//        val viewportWidth = iconData.width?.toFloat() ?: 24f
-//        val viewportHeight = iconData.height?.toFloat() ?: 24f
-//
-//        return try {
-//            ImageVector.Builder(
-//                name = name,
-//                defaultWidth = viewportWidth.dp,
-//                defaultHeight = viewportHeight.dp,
-//                viewportWidth = viewportWidth,
-//                viewportHeight = viewportHeight
-//            ).apply {
-//                // Loop through and add every single path match found in the SVG body
-//                pathStrings.forEach { pathString ->
-//                    val pathNodes = addPathNodes(pathString)
-//                    addPath(
-//                        pathData = pathNodes,
-//                        // CRITICAL: Must provide a base solid fill (e.g., Black)
-//                        // so the Icon composable's tint can blend over it.
-//                        fill = SolidColor(Color.Black)
-//                    )
-//                }
-//            }.build()
-//        } catch (e: Exception) {
-//            e.printStackTrace()
-//            null
-//        }
-//    }
-//
-//    /**
-//     * Extracts all 'd' attribute values out of the SVG string, supporting multi-path SVGs
-//     */
-//    private fun extractAllPathData(svgBody: String): List<String> {
-//        val regex = "d=\"([^\"]+)\"".toRegex()
-//        return regex.findAll(svgBody).map { it.groupValues[1] }.toList()
-//    }
-//}
-
 object SvgPathParser {
 
     private data class ExtractedElement(
@@ -164,15 +118,34 @@ object SvgPathParser {
         val y = extractAttribute(rectTag, "y")?.toFloatOrNull() ?: 0f
         val width = extractAttribute(rectTag, "width")?.toFloatOrNull() ?: return null
         val height = extractAttribute(rectTag, "height")?.toFloatOrNull() ?: return null
-        val rx = extractAttribute(rectTag, "rx")?.toFloatOrNull()
-        val ry = extractAttribute(rectTag, "ry")?.toFloatOrNull() ?: rx
 
-        return if (rx != null && rx > 0f) {
+        // 1. Properly resolve missing radii values based on SVG standards
+        val rawRx = extractAttribute(rectTag, "rx")?.toFloatOrNull()
+        val rawRy = extractAttribute(rectTag, "ry")?.toFloatOrNull()
+
+        val rx = rawRx ?: rawRy
+        val ry = rawRy ?: rawRx
+
+        return if (rx != null && ry != null && rx > 0f && ry > 0f) {
+            // 2. Clamp radii to a maximum of half the width/height to avoid invalid geometry
+            val rX = rx.coerceAtMost(width / 2f)
+            val rY = ry.coerceAtMost(height / 2f)
             val w = width
             val h = height
-            val r = rx.coerceAtMost(w / 2f).coerceAtMost(h / 2f)
-            "M ${x + r} $y h ${w - 2 * r} a $r $r 0 0 1 $r $r v ${h - 2 * r} a $r $r 0 0 1 -$r $r h -${w - 2 * r} a $r $r 0 0 1 -$r -$r v -${h - 2 * r} a $r $r 0 0 1 $r -$r Z"
+
+            // 3. Generate the path string using distinct horizontal (rX) and vertical (rY) radii
+            // Uses the SVG relative arc command: a rx ry x-axis-rotation large-arc sweep dx dy
+            "M ${x + rX} $y " +
+                    "h ${w - 2 * rX} " +
+                    "a $rX $rY 0 0 1 $rX $rY " +
+                    "v ${h - 2 * rY} " +
+                    "a $rX $rY 0 0 1 -$rX $rY " +
+                    "h -${w - 2 * rX} " +
+                    "a $rX $rY 0 0 1 -$rX -$rY " +
+                    "v -${h - 2 * rY} " +
+                    "a $rX $rY 0 0 1 $rX -$rY Z"
         } else {
+            // Simple sharp-cornered rectangle
             "M $x $y h $width v $height h -$width Z"
         }
     }
@@ -194,7 +167,7 @@ object SvgPathParser {
         return "M ${cx - rx} $cy a $rx $ry 0 1 0 ${2 * rx} 0 a $rx $ry 0 1 0 -${2 * rx} 0 Z"
     }
 
-    private fun convertLineToPathData(lineTag: String): String? {
+    private fun convertLineToPathData(lineTag: String): String {
         val x1 = extractAttribute(lineTag, "x1")?.toFloatOrNull() ?: 0f
         val y1 = extractAttribute(lineTag, "y1")?.toFloatOrNull() ?: 0f
         val x2 = extractAttribute(lineTag, "x2")?.toFloatOrNull() ?: 0f
