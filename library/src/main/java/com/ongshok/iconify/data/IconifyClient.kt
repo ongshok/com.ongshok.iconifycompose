@@ -19,7 +19,7 @@ object IconifyClient {
         }
     }
 
-    private const val BASE_URL = "https://api.iconify.design"
+    private val serverUrls: List<String> = listOf("https://api.iconify.design", "https://api.simplesvg.com")
 
     /**
      * Fetches specific icon details from Iconify API
@@ -32,15 +32,19 @@ object IconifyClient {
         val prefix = parts[0]
         val iconName = parts[1]
 
-        return try {
-            val response: IconifyResponse = client.get("$BASE_URL/$prefix.json") {
-                parameter("icons", iconName)
-            }.body()
+        for (baseUrl in serverUrls) {
+            try {
+                val response: IconifyResponse = client.get("$baseUrl/$prefix.json") {
+                    parameter("icons", iconName)
+                }.body()
 
-            response.icons[iconName]
-        } catch (e: Exception) {
-            e.printStackTrace()
-            null
+                return response.icons[iconName]
+            } catch (e: Exception) {
+                e.printStackTrace()
+                // Log exception or silently fall back to the next server mirror
+//                println("Server $baseUrl failed, trying fallback mirror...")
+            }
         }
+        return null // All servers failed
     }
 }

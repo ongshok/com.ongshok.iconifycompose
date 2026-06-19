@@ -48,7 +48,7 @@ dependencies {
 // --- Maven Central Publishing Configuration ---
 mavenPublishing {
     // Defines your token coordinates
-    coordinates("com.ongshok", "iconify", "1.0.0")
+    coordinates("com.ongshok", "iconify", "1.0.1")
 
     pom {
         name.set("Iconify Compose")
